@@ -1320,6 +1320,7 @@ const sidebars = {
         "providers/poe",
         "providers/publicai",
         "providers/predibase",
+        "providers/prism",
         "providers/pydantic_ai_agent",
         "providers/qwencloud",
         "providers/ragflow",
