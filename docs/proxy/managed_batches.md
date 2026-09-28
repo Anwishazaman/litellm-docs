@@ -225,6 +225,8 @@ Once a managed batch reaches `completed`, the proxy's batch cost poller download
 
 The poller runs on a timer, so the row appears some time after the batch finishes rather than the moment it completes. `proxy_batch_polling_interval` in `general_settings` (or the `PROXY_BATCH_POLLING_INTERVAL` env var) sets the base interval in seconds and defaults to `3600`, and the poller adds up to 30s of jitter on top. Set it to something small like `30` while you are testing
 
+A batch that is still unpriced `MANAGED_OBJECT_STALENESS_CUTOFF_DAYS` days after it was created (default `7`, set the env var to change it) gets one last retrieval from the provider before the poller stops tracking it. If the provider reports it finished with an output file by then, it is priced and gets its spend log row like any other batch, even if nobody ever downloaded its results. If it is still running, or the provider or its output file cannot be reached, it is marked `stale_expired`, never polled again, and counted in the `litellm_check_batch_cost_stale_expired_total` Prometheus metric, so alert on that counter to catch batches whose cost was never recorded
+
 ### Spend log fields
 
 The batch's cost row has `call_type: "aretrieve_batch"` and a `request_id` of `<batch id>_batch_cost`, where `<batch id>` is the id `POST /v1/batches` returned:
