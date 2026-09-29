@@ -108,8 +108,14 @@ items={[
 Use these when you already know the type of doc you want.
 
 <NavigationCards
-columns={2}
+columns={3}
 items={[
+  {
+    icon: "🎓",
+    title: "LiteLLM Academy",
+    description: "Guided course on how the gateway handles requests, routing, access, and costs.",
+    to: "https://litellm.ai/course",
+  },
   {
     icon: "📚",
     title: "Guides",
