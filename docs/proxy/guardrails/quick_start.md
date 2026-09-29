@@ -103,7 +103,7 @@ guardrails:
 
 `logging_only_scope` only narrows the `logging_only` scan. If the same guardrail also lists `pre_call` or `post_call`, those modes still run and still block, so `mode: [pre_call, logging_only]` with `logging_only_scope: output` blocks bad requests and records response verdicts without blocking them. To observe a direction without ever blocking it, leave the matching blocking mode out of `mode`
 
-At startup, whether loaded from a config file or stored database row, an invalid `logging_only_scope` is ignored with an error log and the guardrail keeps its configured mode. When creating or updating a guardrail through the API, an invalid scope returns `400`. `input` and `output` are only available for guardrails that run their `logging_only` scan through the shared `apply_guardrail` path; guardrails with their own logging hook, such as Presidio (which has `presidio_filter_scope`), ignore those directional scopes at startup
+At startup, whether loaded from a config file or stored database row, an invalid `logging_only_scope` is ignored with an error log and the guardrail keeps its configured mode. Through the API, a value other than `input`, `output` or `both` returns `422`, a scope the guardrail's mode or integration cannot use returns `400` on create and full update, and a PATCH that sets such a scope returns `422` and leaves the guardrail unchanged. `input` and `output` are only available for guardrails that run their `logging_only` scan through the shared `apply_guardrail` path; guardrails with their own logging hook, such as Presidio (which has `presidio_filter_scope`), ignore those directional scopes at startup
 
 ### Skip system messages in guardrail evaluation
 
