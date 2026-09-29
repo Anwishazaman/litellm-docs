@@ -217,7 +217,7 @@ You can also toggle it from the Admin UI under **Settings > Router Settings > Ge
 | Key with no team or user | the key's `search_tools` | |
 | Proxy admin | not restricted | |
 
-A key can never widen what its team or user grants, and existing keys, teams and users with empty lists lose search access as soon as the setting is on. Denied requests return `403` before any search provider is called
+A key can never widen what its team or user grants, and existing keys, teams and users with empty lists lose search access as soon as the setting is on. Denied requests return `403` before any search provider is called. Web search interception with no registered search tool also stops falling back to the default provider for anyone but a proxy admin
 
 ## **Request/Response Format**
 
