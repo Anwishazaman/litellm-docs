@@ -397,7 +397,7 @@ model_list:
     - model_name: {{openai_small}} 
       litellm_params: # params for litellm completion/embedding call 
         model: {{openai_small}} 
-        api_key: os.getenv(OPENAI_API_KEY)
+        api_key: os.environ/OPENAI_API_KEY
       tpm: 100000
       rpm: 1000
 
@@ -406,7 +406,7 @@ router_settings:
   redis_host: <your-redis-host>
   redis_password: <your-redis-password>
   redis_port: <your-redis-port>
-  enable_pre_call_check: true
+  enable_pre_call_checks: true
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
@@ -453,7 +453,7 @@ model_list = [{ ... }]
 # init router
 router = Router(model_list=model_list,
 				routing_strategy="latency-based-routing",# 👈 set routing strategy
-				enable_pre_call_check=True, # enables router rate limits for concurrent calls
+				enable_pre_call_checks=True, # enables router rate limits for concurrent calls
 				)
 
 ## CALL 1+2
@@ -576,7 +576,7 @@ router = Router(model_list=model_list,
 				redis_password=os.environ["REDIS_PASSWORD"], 
 				redis_port=os.environ["REDIS_PORT"], 
                 routing_strategy="usage-based-routing",
-				enable_pre_call_check=True, # enables router rate limits for concurrent calls
+				enable_pre_call_checks=True, # enables router rate limits for concurrent calls
 				)
 
 response = await router.acompletion(model="{{openai_small}}", 
@@ -1053,7 +1053,7 @@ print(response._hidden_params["model_id"])  # same deployment for every call wit
 | `deployment_affinity_ttl_seconds` | Idle TTL of a pin, in seconds. Default `3600`. |
 | `model_group_affinity_config` | Enable affinity on some model groups only, for example `{"gpt-4.1": ["session_affinity"]}`. Groups not listed use the global `optional_pre_call_checks`. |
 
-These settings are read at startup: set them in `config.yaml` (or on `Router()`) and restart the proxy.
+`deployment_affinity_ttl_seconds` and `model_group_affinity_config` are read at startup: set them in `config.yaml` (or on `Router()`) and restart the proxy. `optional_pre_call_checks` can also be changed on a running proxy with `POST /config/update` and a body of `{"router_settings": {"optional_pre_call_checks": [...]}}`, as long as the key is not set in `config.yaml` (a value there wins, and sending a different one returns a 400). The call needs an admin key, a database, and `STORE_MODEL_IN_DB=True`. The list replaces the previous one and is stored in the database, so every instance polling the database applies it. Names in the new list are turned on right away. A name left out is turned off right away for `prompt_caching`, `enforce_model_rate_limits`, and `encrypted_content_affinity` (the last from v1.104.0), while `session_affinity`, `deployment_affinity`, `responses_api_deployment_check`, and `router_budget_limiting` stay on until a restart. `GET /router/settings` shows the stored list, the config file merged with the database
 
 :::info
 The `session_affinity` option inside `complexity_router_config` on the [Auto Router](./proxy/auto_routing.md) page is a different setting. It pins the auto router's model choice for a session; the pre-call check on this page pins a deployment inside a model group.
@@ -1592,6 +1592,8 @@ stops a deployment `num_retries: N` from being applied twice and turning one req
 - Use `RetryPolicy` if you want to set a `num_retries` based on the Exception received
 - Use `AllowedFailsPolicy` to set a custom number of `allowed_fails`/minute before cooling down a deployment
 
+`RetryPolicy` takes one field per error type (`AuthenticationErrorRetries`, `TimeoutErrorRetries`, `RateLimitErrorRetries`, `ContentPolicyViolationErrorRetries`, `BadRequestErrorRetries`, `NotFoundErrorRetries`, `InternalServerErrorRetries`, `ServiceUnavailableErrorRetries`) plus `DefaultRetries` for every error none of those cover. The most specific field wins: `NotFoundErrorRetries` governs any 404 answer, whatever exception class the provider's error body mapped to, `BadRequestErrorRetries` then covers a 4xx the provider reported as an invalid request, and `DefaultRetries` applies last. A field left unset defers to the next one, so a policy that only sets `DefaultRetries` retries 404s too; set `NotFoundErrorRetries: 0` to leave them alone.
+
 [**See All Exception Types**](https://github.com/BerriAI/litellm/blob/ccda616f2f881375d4e8586c76fe4662909a7d22/litellm/types/router.py#L436)
 
 
@@ -1604,6 +1606,8 @@ Example:
 retry_policy = RetryPolicy(
     ContentPolicyViolationErrorRetries=3, 		  # run 3 retries for ContentPolicyViolationErrors
     AuthenticationErrorRetries=0,         		  # run 0 retries for AuthenticationErrorRetries
+    NotFoundErrorRetries=0,               		  # never retry a 404 (a deleted response id, an unknown deployment name)
+    DefaultRetries=2,                     		  # run 2 retries for every error with no field of its own
 )
 
 allowed_fails_policy = AllowedFailsPolicy(
@@ -1623,6 +1627,9 @@ retry_policy = RetryPolicy(
 	BadRequestErrorRetries=1,
 	TimeoutErrorRetries=2,
 	RateLimitErrorRetries=3,
+	NotFoundErrorRetries=0,
+	ServiceUnavailableErrorRetries=2,
+	DefaultRetries=1,
 )
 
 allowed_fails_policy = AllowedFailsPolicy(
@@ -1668,7 +1675,9 @@ response = await router.acompletion(
 router_settings: 
   retry_policy: {
     "BadRequestErrorRetries": 3,
-    "ContentPolicyViolationErrorRetries": 4
+    "ContentPolicyViolationErrorRetries": 4,
+    "NotFoundErrorRetries": 0, # never retry a 404
+    "DefaultRetries": 2 # retries for every error with no field of its own
   }
   allowed_fails_policy: {
     "ContentPolicyViolationErrorAllowedFails": 1000, # Allow 1000 ContentPolicyViolationError before cooling down a deployment

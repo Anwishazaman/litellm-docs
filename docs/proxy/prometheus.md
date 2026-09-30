@@ -77,7 +77,7 @@ scrape_configs:
       - targets: ["litellm:4001"]
 ```
 
-:::warning Secure the metrics listener
+:::warning[Secure the metrics listener]
 The dedicated listener does not use LiteLLM virtual-key authentication. `require_auth_for_metrics_endpoint` applies only to `/metrics` on the proxy port. Permit access only from trusted Prometheus or collector networks, and do not publish the dedicated port through a public ingress or load balancer.
 :::
 
@@ -396,6 +396,12 @@ Use this for LLM API Error monitoring and tracking remaining rate limits and tok
 |----------------------|--------------------------------------|
 | `litellm_provider_remaining_budget_metric`       | Remaining budget for an LLM provider; only emitted when [provider budget routing](provider_budget_routing) is configured. Labels: `"api_provider"` |
 
+### Spend Capture Rate
+
+| Metric Name          | Description                          |
+|----------------------|--------------------------------------|
+| `litellm_spend_capture_rate`       | Share of the provider's bill LiteLLM captured as spend over the [scheduled capture-rate check](spend_capture_rate)'s window (captured spend / provider bill). `NaN` when the last check produced no rate, and on every proxy with a database where the check is not configured. Labels: `"api_provider"` |
+
 ### Deployment State 
 | Metric Name          | Description                          |
 |----------------------|--------------------------------------|
@@ -417,6 +423,7 @@ Use this for LLM API Error monitoring and tracking remaining rate limits and tok
 | Metric Name          | Description                          |
 |----------------------|--------------------------------------|
 | `litellm_requests_metric`             | **deprecated** use `litellm_proxy_total_requests_metric`. Total number of LLM calls to litellm, tracked per API key, team, user. Labels: `"end_user", "hashed_api_key", "api_key_alias", "model", "team", "team_alias", "user", "user_email", "client_ip", "user_agent", "requested_model", "model_id", "api_provider"` |
+| `litellm_zero_cost_requests_total`    | Requests that carried usage but were logged at `$0` on a model whose pricing entry has a non-zero rate. Free models and requests without usage are not counted. Labels: `"requested_model", "model", "model_id", "api_provider", "reason"` where `reason` is `missing_pricing_key`, `pricing_not_applied` or `cost_calculation_error`. Each counted request also logs one warning naming the missing pricing key, see [Requests that price to $0](cost_tracking#requests-that-price-to-0) |
 
 ## Request Latency Metrics
 
