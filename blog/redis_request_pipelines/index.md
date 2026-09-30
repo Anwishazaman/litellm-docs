@@ -4,30 +4,15 @@ title: "How we cut LiteLLM's Redis round trips per request by 64%"
 date: 2026-10-01T09:00:00
 authors:
   - yassin
-image: ./cover.png
+image: ./cover.gif
 description: "A governed request to the LiteLLM AI Gateway waited on Redis 22 times. It now waits 8 times: one pipeline per Redis backend before the model call, one after."
 tags: [performance, redis, proxy, engineering, ai-gateway]
 hide_table_of_contents: true
 ---
 
-import { PerformanceResults, RoundTripTimeline, BatchLifecycle } from './diagrams';
-import coverVideo from './cover.mp4';
-import coverPoster from './cover.png';
+import { PerformanceResults, RoundTripTimeline, BatchLifecycle, EndpointResults } from './diagrams';
 
-<video
-  autoPlay
-  loop
-  muted
-  playsInline
-  controls
-  preload="metadata"
-  poster={coverPoster.src?.src ?? coverPoster.default ?? coverPoster}
-  width="1080"
-  height="1080"
-  style={{display: 'block', width: '100%', height: 'auto', marginBottom: '2rem'}}
-  aria-label="LiteLLM's 22 Redis round trips merge into 8, a 64% reduction per request">
-  <source src={coverVideo} type="video/mp4" />
-</video>
+![LiteLLM's 22 Redis round trips merge into 8, a 64% reduction per request](./cover.gif)
 
 This week, we cut the number of times a request to the LiteLLM proxy waits on Redis from **22 to 8**.
 
@@ -59,14 +44,7 @@ Each command in a pipeline gets its own reply. A Lua script that is not loaded f
 
 The same harness ran every endpoint shape the proxy governs the same way, with and without streaming, with usage-based and simple-shuffle routing, and with a response-cache hit. `/v1/responses` keeps one extra round trip on each side because its native handler still makes two synchronous cache calls from a worker thread.
 
-| Request | Before | After |
-|---|---:|---:|
-| `/v1/chat/completions` | 22 | 8 |
-| `/v1/chat/completions`, streaming | 24 | 8 |
-| `/v1/chat/completions`, simple-shuffle routing | 22 | 8 |
-| `/v1/messages` | 21 | 8 |
-| `/v1/responses` | 26 | 9 |
-| `/v1/chat/completions`, response-cache hit | 18 | 7 |
+<EndpointResults />
 
 ## Auth refresh requests: 46 → 16 Redis round trips
 
