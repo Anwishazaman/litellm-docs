@@ -247,7 +247,7 @@ curl -L -X POST 'http://localhost:4000/customer/new' \
 -H 'Content-Type: application/json' \
 -d '{
     "user_id": "user_1",
-    "models": ["gpt-4o-mini"]
+    "models": ["{{openai_small}}"]
   }'
 ```
 
@@ -259,7 +259,7 @@ curl -L -X POST 'http://localhost:4000/v1/chat/completions' \
 -H 'Content-Type: application/json' \
 -H 'x-litellm-customer-id: user_1' \
 -d '{
-    "model": "gpt-4o",
+    "model": "{{openai_large}}",
     "messages": [{"role": "user", "content": "hi"}]
   }'
 ```
@@ -267,7 +267,7 @@ curl -L -X POST 'http://localhost:4000/v1/chat/completions' \
 ```json title="Response (403)"
 {
   "error": {
-    "message": "The requested model 'gpt-4o' is not available for this API key, or the model name is invalid. Check the models available to you and try again.",
+    "message": "The requested model '{{openai_large}}' is not available for this API key, or the model name is invalid. Check the models available to you and try again.",
     "type": "customer_model_access_denied",
     "param": "model",
     "code": "403"
