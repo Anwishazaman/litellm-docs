@@ -267,7 +267,7 @@ curl -L -X POST 'http://localhost:4000/v1/chat/completions' \
 ```json title="Response (403)"
 {
   "error": {
-    "message": "The requested model '{{openai_large}}' is not available for this API key, or the model name is invalid. Check the models available to you and try again.",
+    "message": "The requested model '{{openai_large}}' is not in the allowed models for this customer. Check the models this customer can use and try again.",
     "type": "customer_model_access_denied",
     "param": "model",
     "code": "403"
