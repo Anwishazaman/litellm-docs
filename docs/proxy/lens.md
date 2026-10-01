@@ -45,7 +45,7 @@ Check that you can see the task, tool results, and final answer. If these are mi
 
 ### Connect the analyzer
 
-Sign in as a proxy administrator and open **Lens** under **Observability**. Click **Set up analysis** at the top of the page. Check your LiteLLM deployment URL, then click **Generate setup command**.
+Sign in as a proxy administrator and open **Lens** under **Observability**. Click **Set up analysis** at the top of the page. Check your LiteLLM deployment URL, choose an existing virtual key or click **Create worker key**, then click **Generate setup command**. Analysis spend appears under that key in **Virtual Keys**, and its model permissions, budgets, and rate limits apply. Existing workers can use **Billing key** to assign a key without replacing their worker token.
 
 Run the Docker command on a server that can reach your LiteLLM deployment. Keep the command private because it contains the worker token. Wait for **Connected · ready to analyze**.
 
@@ -123,7 +123,7 @@ general_settings:
 
 Set `CLICKHOUSE_URL` to the ClickHouse HTTP address your proxy can reach. `CLICKHOUSE_DATABASE` defaults to `litellm`. You can set `CLICKHOUSE_READER_URL` to use a separate read-only account; otherwise reads use `CLICKHOUSE_URL`.
 
-Investigations also need PostgreSQL, a configured analysis model, and a connected Lens worker. Keep the proxy and worker versions compatible. See the [tracing config](https://github.com/BerriAI/litellm/blob/main/docker/tracing-config.yaml) and [worker setup guide](https://github.com/BerriAI/litellm/blob/litellm_lens_parallel_analysis/deploy/lens/README.md) for deployment details.
+Investigations also need PostgreSQL, a configured analysis model, and a connected Lens worker. Keep the proxy and worker versions compatible. See the [tracing config](https://github.com/BerriAI/litellm/blob/main/docker/tracing-config.yaml) and [worker setup guide](https://github.com/BerriAI/litellm/blob/main/deploy/lens/README.md) for deployment details.
 
 ## Agent tracing API
 
@@ -189,17 +189,36 @@ For example, save this as `lens.json`. Use an analysis model configured on your 
 }
 ```
 
-Preview without starting analysis, then create the lens and run its first investigation:
+With an analyzer connected, preview the matching activity, then create the lens and run its first investigation. These commands use `jq` to read the returned IDs:
 
 ```bash
-jq '{settings: .}' lens.json | curl \
-  -H "Authorization: Bearer <proxy-admin-key>" \
-  -H "Content-Type: application/json" \
-  -d @- "https://<your-litellm-proxy>/engine/preview/sample"
+export LITELLM_URL="https://<your-litellm-proxy>"
+export LITELLM_API_KEY="<proxy-admin-key>"
 
-curl -H "Authorization: Bearer <proxy-admin-key>" \
+jq '{settings: .}' lens.json | curl -fsS \
+  -H "Authorization: Bearer $LITELLM_API_KEY" \
   -H "Content-Type: application/json" \
-  -d @lens.json "https://<your-litellm-proxy>/engine"
+  -d @- "$LITELLM_URL/engine/preview/sample"
+
+result=$(curl -fsS -H "Authorization: Bearer $LITELLM_API_KEY" \
+  -H "Content-Type: application/json" -d @lens.json "$LITELLM_URL/engine")
+lens_id=$(echo "$result" | jq -r '.id')
+run_id=$(echo "$result" | jq -r '.jobs[0].id')
+
+curl -fsS -H "Authorization: Bearer $LITELLM_API_KEY" \
+  "$LITELLM_URL/engine/$lens_id/runs/$run_id" \
+  | jq '{status, stage, coverage, cost, findings}'
+```
+
+Repeat the last command to check progress and read the completed findings. Start another investigation or browse previous ones:
+
+```bash
+curl -fsS -H "Authorization: Bearer $LITELLM_API_KEY" \
+  -H "Content-Type: application/json" -d '{}' \
+  "$LITELLM_URL/engine/$lens_id/runs"
+
+curl -fsS -H "Authorization: Bearer $LITELLM_API_KEY" \
+  "$LITELLM_URL/engine/$lens_id/runs?offset=0"
 ```
 
 The preview returns `eligible`, `selected`, and a page of `executions`. Send its `next_offset` as `offset` alongside `settings` to see the next page. Creation returns the lens `id` and its queued investigation in `jobs`. Poll `GET /engine/{id}/runs/{run_id}` for `status`, `stage`, `coverage`, `cost`, and `findings`.
