@@ -235,12 +235,15 @@ curl -X POST "http://localhost:4000/config/field/update" \
 
 With the setting enabled, a key with no direct agent grants and no grants on its team reaches no agents. Its agent
 card requests, `message/send` requests, `/v1/chat/completions` calls using an `a2a/<agent_name>` model, and requests to
-`/v1/agents/{agent_id}` are denied. A2A models are hidden from `/v1/model/info` and `/model_group/info`. A key with
-direct grants continues to reach those agents, and a key without direct grants inherits the grants from its team.
-Proxy administrators are exempt from this requirement. If LiteLLM cannot resolve the key or team grants, the request
-is denied instead of falling back to open access
+`/v1/agents/{agent_id}` are denied. Its `a2a/<agent_name>` entries are left out of `/v2/model/info` and
+`/model_group/info`. A key with direct grants continues to reach those agents, and a key without direct grants
+inherits the grants from its team. Proxy administrators are exempt from this requirement. A failed grant lookup never
+falls back to open access
 
-This setting is the A2A equivalent of [`require_key_mcp_access_defined`](./mcp_control#require-keys-to-define-their-own-mcp-access)
+The MCP counterpart is [`require_key_mcp_access_defined`](./mcp_control#require-keys-to-define-their-own-mcp-access).
+They differ on team inheritance: the MCP setting treats the team list as a ceiling, so a key must carry its own
+grant, while this setting still lets a key inherit its team's agent grants and only closes the case where neither the
+key nor its team grants anything
 
 :::note
 
