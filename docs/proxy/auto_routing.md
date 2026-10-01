@@ -284,7 +284,7 @@ router_settings:
 
 In Claude Code the main model picks `haiku`, `sonnet` or `opus` on the Agent tool for each subagent, and subagent requests in a session that started on this router are routed through it. Set `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL` and `ANTHROPIC_DEFAULT_OPUS_MODEL` to the tier groups, or alias the concrete ids Claude Code sends to them as above
 
-Decisions record `cause: model_directed`, with `requested:<model>` or `strongest_tier` in `signals`. No classifier call is made, so there is no classifier cost. `session_affinity`, `classification_mode: user_turn` and `adaptive` are rejected at startup, since each would replace the tier the request named with a held or sampled one. Only delegated work routes down: the main loop itself stays on the strongest tier
+Decisions record `cause: model_directed`, with `requested:<model>` or `strongest_tier` in `signals`. No classifier call is made, so there is no classifier cost. `session_affinity`, `classification_mode: user_turn`, `adaptive` and `keyword_tier_rules` are rejected at startup, since each would replace the tier the request named. `tier_definitions` is rejected too, since a request can only name a built-in tier's model. Only delegated work routes down: the main loop itself stays on the strongest tier
 
 ### Keyword rules
 
