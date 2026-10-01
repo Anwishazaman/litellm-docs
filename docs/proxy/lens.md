@@ -101,7 +101,7 @@ Open a finding to read what happened and the suggested next step. Expand **Evide
 
 ![A finding showing what happened, what to do next, and links to the supporting runs.](/img/lens/finding-detail.png)
 
-Use the batch selector to return to a previous investigation and its findings, settings, progress, and cost. **Runs** shows the activity selected for that batch. **Scans** shows investigation history.
+Use the batch selector to return to a previous investigation and its findings, settings, progress, total duration, and cost. Duration includes any wait for an analyzer. **Runs** shows the activity selected for that batch. **Scans** shows investigation history.
 
 Findings describe the reviewed sample. **Linked runs** counts cited supporting runs; it is not a count of all failures. Evidence can also include labeled counterexamples.
 
