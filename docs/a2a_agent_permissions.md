@@ -233,6 +233,9 @@ curl -X POST "http://localhost:4000/config/field/update" \
   }'
 ```
 
+Runtime updates reach every proxy worker only when `store_model_in_db` is `true`. Without it, set the value in
+`config.yaml` so every worker loads it at startup
+
 With the setting enabled, a key with no direct agent grants and no grants on its team reaches no agents. Its agent
 card requests, `message/send` requests, `/v1/chat/completions` calls using an `a2a/<agent_name>` model, and requests to
 `/v1/agents/{agent_id}` are denied. Its `a2a/<agent_name>` entries are left out of `/v2/model/info` and
